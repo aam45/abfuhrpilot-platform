@@ -23,7 +23,9 @@ Entwickelt von **Amin Ahmed Mohamed** als eigenes Projekt (Konzept, Backend, Fro
 - Routenplanung mit Stopps, Reihenfolge per Drag & Drop, Fahrzeug- und Fahrerzuordnung
 - Fahrer-Ansicht: nächster Stopp, Start / Erledigt / Überspringen, Problem melden mit Foto
 - Stammdaten: Container, Fahrzeuge (mit Freigabe je Abfallart), Fahrer, Abfallarten, Ziele
-- Benutzerverwaltung mit Passwort-Reset und E-Mail-Bestätigung
+- Benutzerverwaltung mit Passwort-Reset und E-Mail-Bestätigung (Einmal-Tokens). Der
+  Mailversand ist in dieser Version ein Platzhalter, der nur protokolliert; für echten
+  Versand wird ein SMTP-Dienst hinter `IEmailSender` angebunden
 
 ## Starten
 

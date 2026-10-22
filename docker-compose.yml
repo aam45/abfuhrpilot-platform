@@ -24,6 +24,10 @@ services:
       db:
         condition: service_healthy
     environment:
+      # Local demo stack, not Production: the production secrets guard would
+      # (rightly) refuse the dev-only defaults below.
+      ASPNETCORE_ENVIRONMENT: Demo
+      Swagger__Enabled: "true"
       # Inside the compose network the DB is reachable as "db:5432".
       ConnectionStrings__Default: Host=db;Port=5432;Database=abfuhrpilot;Username=abfuhrpilot;Password=abfuhrpilot
       # Local/demo signing key — override with a strong secret in production.
