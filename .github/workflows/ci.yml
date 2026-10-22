@@ -45,7 +45,7 @@ jobs:
       - name: Install deps
         run: npm ci
       - name: Unit tests (headless Chrome)
-        run: npx ng test --watch=false --browsers=ChromeHeadless
+        run: npx ng test --watch=false --browsers=ChromeHeadlessCI
         env:
           CHROME_BIN: ${{ steps.chrome.outputs.chrome-path }}
       - name: Production build
