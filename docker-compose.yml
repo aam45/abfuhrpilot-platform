@@ -1,0 +1,54 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: abfuhrpilot-db
+    environment:
+      POSTGRES_DB: abfuhrpilot
+      POSTGRES_USER: abfuhrpilot
+      POSTGRES_PASSWORD: abfuhrpilot
+    ports:
+      # Host port 5434 — 5432/5433 are taken by unrelated local projects.
+      - "5434:5432"
+    volumes:
+      - abfuhrpilot_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U abfuhrpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ./backend
+    container_name: abfuhrpilot-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Inside the compose network the DB is reachable as "db:5432".
+      ConnectionStrings__Default: Host=db;Port=5432;Database=abfuhrpilot;Username=abfuhrpilot;Password=abfuhrpilot
+      # Local/demo signing key — override with a strong secret in production.
+      Jwt__SecretKey: dev-only-insecure-key-change-me-please-32chars-minimum!!
+      Storage__PhotoPath: /app/App_Data/problem-photos
+    ports:
+      - "5080:8080"
+    volumes:
+      - abfuhrpilot_photos:/app/App_Data
+    healthcheck:
+      # aspnet base image ships neither wget nor curl — use bash /dev/tcp.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/localhost/8080 && printf 'GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"ok\"' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: ./frontend
+    container_name: abfuhrpilot-web
+    depends_on:
+      - api
+    ports:
+      # Frontend expects the API on host port 5080 (core/config.ts) — kept stable.
+      - "4200:80"
+
+volumes:
+  abfuhrpilot_pgdata:
+  abfuhrpilot_photos:

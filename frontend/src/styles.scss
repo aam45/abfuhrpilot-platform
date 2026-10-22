@@ -1,0 +1,303 @@
+/* Self-hosted Inter (variable) — no CDN, works offline. */
+@use "@fontsource-variable/inter";
+
+/* ============================================================
+   AbfuhrPilot — global design tokens & base styles (v2)
+   Identity: German waste-collection operations at first light.
+   - "Tanne" fir-black sidebar (truck cabin before dawn)
+   - "Papier" green-tinted light workspace
+   - one Signal-green accent; status colors are operational semantics
+   - mono for operational identifiers (Tournummer, Kennzeichen)
+   - waste-fraction color rails encode the tour's real fraction
+   Native Angular + CSS custom properties. No UI library.
+   ============================================================ */
+
+:root {
+  /* Workspace neutrals (green-tinted, not blue-gray) */
+  --c-bg: #f4f6f5;
+  --c-surface: #ffffff;
+  --c-surface-2: #f7f9f8;
+  --c-border: #e4e8e6;
+  --c-border-strong: #cfd6d2;
+  --c-text: #131a16;
+  --c-text-muted: #5f6b65;
+  --c-text-subtle: #93a09a;
+
+  /* Tanne — dark shell surfaces */
+  --c-shell: #0e1a14;
+  --c-shell-2: #14231b;
+  --c-shell-border: #22352a;
+  --c-shell-text: #c9d6cf;
+  --c-shell-text-dim: #7d8f86;
+
+  /* Brand — Signal green */
+  --c-primary: #16a34a;
+  --c-primary-strong: #15803d;
+  --c-primary-deep: #0b7a38;
+  --c-primary-soft: #e6f6ec;
+  --c-primary-glow: rgba(34, 197, 94, .18);
+  --c-primary-contrast: #ffffff;
+
+  /* Status colors (operational semantics).
+     progress = Signal green: the live state carries the brand color and matches
+     the (already green) progress meters — blue "In Arbeit" next to green bars
+     read as two different states. done recedes one step into forest green;
+     the live/done distinction is carried by badge weight (filled vs tint). */
+  --c-open: #64748b;        --c-open-soft: #eef1f5;
+  --c-progress: #16a34a;    --c-progress-soft: #e6f6ec;
+  --c-done: #15803d;        --c-done-soft: #e7f6ec;
+  --c-skip: #a16207;        --c-skip-soft: #fbf3e0;
+  --c-problem: #dc2626;     --c-problem-soft: #fdeaea;
+  --c-info: #0891b2;        --c-info-soft: #e2f4f8;
+
+  /* Waste fraction accents (German color code) */
+  --w-hausmuell: #6b7280;
+  --w-kunststoff: #eab308;
+  --w-holz: #92400e;
+  --w-papier: #2563eb;
+  --w-bio: #65a30d;
+  --w-metall: #64748b;
+  --w-glas: #0891b2;
+  --w-sperr: #db2777;
+  --w-container: #7c3aed;
+  --w-sonder: #dc2626;
+
+  /* Radius & elevation */
+  --r-sm: 8px;  --r-md: 12px;  --r-lg: 16px;  --r-xl: 22px;
+  --sh-sm: 0 1px 2px rgba(19, 26, 22, .05), 0 1px 3px rgba(19, 26, 22, .06);
+  --sh-md: 0 3px 10px rgba(19, 26, 22, .07), 0 1px 3px rgba(19, 26, 22, .05);
+  --sh-lg: 0 14px 34px rgba(19, 26, 22, .14);
+  --sh-lift: 0 6px 18px rgba(19, 26, 22, .10);
+
+  /* Motion (fast, subtle) */
+  --t-fast: 120ms cubic-bezier(.2, .7, .3, 1);
+  --t-med: 180ms cubic-bezier(.2, .7, .3, 1);
+  --t-enter: 240ms cubic-bezier(.16, .84, .3, 1);
+
+  /* Z-index scale (semantic — never invent 999s) */
+  --z-nav: 10;
+  --z-sticky: 20;
+  --z-overlay: 30;
+  --z-modal: 50;
+  --z-toast: 60;
+
+  --space: 8px;
+  --sidebar-w: 264px;
+  --topbar-h: 60px;
+  --font: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Operational identifiers: Tournummer, Kennzeichen, Container-Nr. */
+  --font-mono: ui-monospace, "Cascadia Mono", "Segoe UI Mono", "JetBrains Mono", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: var(--font);
+  background: var(--c-bg);
+  color: var(--c-text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, h4 { margin: 0; font-weight: 700; letter-spacing: -0.015em; color: var(--c-text); text-wrap: balance; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+:focus-visible {
+  outline: 2px solid var(--c-primary);
+  outline-offset: 2px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px var(--c-primary-glow);
+}
+
+/* ---- Reusable primitives ---- */
+.ap-card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-sm);
+}
+.ap-muted { color: var(--c-text-muted); }
+.ap-subtle { color: var(--c-text-subtle); }
+
+/* Operational identifier (shift-board style) */
+.ap-id {
+  font-family: var(--font-mono);
+  font-size: .92em;
+  font-weight: 600;
+  letter-spacing: .02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ap-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid transparent; border-radius: var(--r-md);
+  padding: 10px 16px; font-weight: 600; font-size: 14px; cursor: pointer;
+  transition: background var(--t-fast), box-shadow var(--t-fast),
+              transform var(--t-fast), border-color var(--t-fast);
+  background: var(--c-surface); color: var(--c-text);
+}
+.ap-btn:active:not(:disabled) { transform: scale(.97); }
+.ap-btn--primary { background: var(--c-primary); color: var(--c-primary-contrast); box-shadow: var(--sh-sm); }
+.ap-btn--ghost { background: transparent; border-color: var(--c-border-strong); }
+.ap-btn--danger { background: var(--c-problem); color: #fff; }
+/* Hover feedback only where a real pointer exists (touch taps must not stick). */
+@media (hover: hover) and (pointer: fine) {
+  .ap-btn:hover:not(:disabled) { box-shadow: var(--sh-sm); }
+  .ap-btn--primary:hover:not(:disabled) { background: var(--c-primary-strong); box-shadow: var(--sh-md); }
+  .ap-btn--ghost:hover:not(:disabled) { background: var(--c-surface-2); }
+  .ap-btn--danger:hover:not(:disabled) { background: #b91c1c; }
+}
+.ap-btn--lg { padding: 16px 22px; font-size: 16px; border-radius: var(--r-lg); min-height: 56px; }
+.ap-btn--block { width: 100%; }
+.ap-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.ap-input, .ap-select {
+  width: 100%; padding: 10px 12px; font-size: 14px; color: var(--c-text);
+  background: var(--c-surface); border: 1px solid var(--c-border-strong);
+  border-radius: var(--r-md);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.ap-input:focus, .ap-select:focus {
+  outline: none; border-color: var(--c-primary);
+  box-shadow: 0 0 0 3px var(--c-primary-glow);
+}
+.ap-label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; color: var(--c-text); }
+.ap-field { margin-bottom: 16px; }
+
+.ap-grid { display: grid; gap: 16px; }
+
+/* Command bar above tables/lists: search + filters + counts */
+.ap-toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+
+/* Square icon button (36px) — labelled via aria-label */
+.ap-icon-btn {
+  width: 36px; height: 36px; border-radius: 9px; flex: 0 0 auto;
+  border: 1px solid var(--c-border-strong); background: var(--c-surface);
+  display: inline-grid; place-items: center; cursor: pointer; color: var(--c-text-muted);
+  transition: background var(--t-fast), color var(--t-fast), transform var(--t-fast);
+}
+.ap-icon-btn:active { transform: scale(.94); }
+@media (hover: hover) and (pointer: fine) {
+  .ap-icon-btn:hover { background: var(--c-surface-2); color: var(--c-text); }
+}
+
+/* Enterprise table language — ONE implementation for every data table.
+   Pair with .ap-card.ap-table-shell so the header surface clips to the radius.
+   overflow: clip (NOT hidden) — hidden creates a scroll container, which would
+   trap the sticky thead inside the card and paint it over the first rows. */
+.ap-table-shell { padding: 0; overflow: clip; }
+.ap-tbl { width: 100%; border-collapse: collapse; }
+.ap-tbl th {
+  text-align: left; font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--c-text-subtle);
+  padding: 11px 12px; border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface-2); white-space: nowrap;
+}
+/* Sticky header: column labels stay visible while scanning long catalogues/lists.
+   Offset by the topbar height so it settles just below it, not underneath. The opaque
+   --c-surface-2 background (set above) keeps scrolled rows from showing through. */
+.ap-tbl thead th {
+  position: sticky;
+  top: var(--topbar-h);
+  z-index: var(--z-sticky);
+}
+.ap-tbl td { padding: 13px 12px; border-bottom: 1px solid var(--c-border); font-size: 14px; vertical-align: middle; }
+.ap-tbl tbody tr:last-child td { border-bottom: none; }
+.ap-tbl tbody tr { transition: background var(--t-fast); }
+.ap-tbl tbody tr:hover, .ap-tbl tbody tr:focus-visible { background: var(--c-surface-2); }
+
+/* Page entrance — one orchestrated moment per navigation */
+.ap-page-enter { animation: ap-fade-up var(--t-enter) both; }
+@keyframes ap-fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Content-swap continuity — skeleton/empty-state -> table/cards inside an
+   already-visible page. Reuses ap-fade-up but at --t-med (180ms, not 240ms):
+   this can retrigger tens of times/day (every search debounce, every filter
+   click), so it stays short and subtle rather than the full page-enter beat. */
+.ap-content-enter { animation: ap-fade-up var(--t-med) both; }
+
+/* Skeleton shimmer */
+@keyframes ap-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* GPS location puck (rendered inside a Leaflet divIcon → global scope).
+   Signal green, white ring, soft halo pulse; reduced-motion kills the pulse. */
+.ap-puck {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--c-primary);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .35);
+  position: relative;
+}
+.ap-puck-halo {
+  position: absolute; inset: -9px; border-radius: 50%;
+  background: var(--c-primary-glow);
+  animation: ap-puck-pulse 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes ap-puck-pulse {
+  0%, 100% { transform: scale(.8); opacity: .9; }
+  50% { transform: scale(1.25); opacity: .25; }
+}
+
+/* Interactive rows/cards — lift only for real pointers */
+.ap-hover-lift { transition: transform var(--t-fast), box-shadow var(--t-fast); }
+@media (hover: hover) and (pointer: fine) {
+  .ap-hover-lift:hover { transform: translateY(-1px); box-shadow: var(--sh-lift); }
+}
+
+/* Filter chip — the console's one selected-state language.
+   Used for status/role filters and multi-select option chips. */
+.ap-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--c-border-strong); background: var(--c-surface);
+  padding: 7px 14px; border-radius: 999px; min-height: 32px;
+  font-family: inherit; font-weight: 600; font-size: 13px; color: var(--c-text-muted);
+  cursor: pointer;
+  transition: background var(--t-fast), color var(--t-fast),
+              border-color var(--t-fast), transform var(--t-fast);
+}
+.ap-chip:active { transform: scale(.96); }
+.ap-chip.on, .ap-chip[aria-pressed="true"] {
+  background: var(--c-shell); border-color: var(--c-shell); color: #fff;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ap-chip:hover:not(.on):not([aria-pressed="true"]) { background: var(--c-surface-2); color: var(--c-text); }
+}
+
+/* Progress meter — GPU-only fill (scaleX, not width). Set the fill's
+   transform from the template: [style.transform]="'scaleX(' + ratio + ')'". */
+.ap-meter {
+  display: block; height: 8px; border-radius: 99px;
+  background: var(--c-border); overflow: hidden;
+}
+.ap-meter > i {
+  display: block; height: 100%; width: 100%;
+  background: linear-gradient(90deg, var(--c-primary-deep), var(--c-primary));
+  transform-origin: left center; transform: scaleX(0);
+  transition: transform var(--t-enter);
+}
+
+/* Accessibility: motion off on request.
+   Essential status spinners stay (contained rotation communicates "working"),
+   everything else — movement, entrances, shimmer — collapses to instant.
+   The !important below is load-bearing, not decorative: component `styles: []`
+   blocks compile under Angular's emulated encapsulation (e.g. `.badge[_ngcontent-x]`),
+   which is more specific than the wildcard selector here. Only `!important`
+   makes this override reliably beat every current and future component-scoped
+   transition/animation — do not remove it as a "cleanup". */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.ap-keep-motion), *:not(.ap-keep-motion)::before, *:not(.ap-keep-motion)::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ap-keep-motion { animation-duration: 1.2s !important; }
+}

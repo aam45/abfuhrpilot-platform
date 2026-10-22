@@ -1,0 +1,27 @@
+# .NET
+bin/
+obj/
+*.user
+[Bb]uild/
+[Oo]ut/
+
+# Environment / secrets
+.env
+*.env.local
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# IDE
+.vs/
+.idea/
+*.suo
+
+
+
+# OS
+.DS_Store
+Thumbs.db
